@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✨ 摇一摇星星雨</title>
+    <title>⭐ 摇一摇 星星雨</title>
     <style>
         * {
             margin: 0;
@@ -11,7 +11,7 @@
             box-sizing: border-box;
         }
         body {
-            background: #0b0e2a;
+            background: linear-gradient(135deg, #0b0e2a 0%, #1a1a3e 50%, #0b0e2a 100%);
             height: 100vh;
             overflow: hidden;
             touch-action: none;
@@ -20,82 +20,127 @@
             align-items: center;
         }
 
-        /* ===== 左上角调试面板 ===== */
-        #debug {
+        /* ===== 背景装饰星星 ===== */
+        #bg-stars {
             position: fixed;
-            top: 16px;
-            left: 16px;
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 13px;
-            font-family: 'Courier New', monospace;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 14px;
-            border-radius: 10px;
-            backdrop-filter: blur(6px);
-            line-height: 1.7;
-            max-width: 220px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .bg-star {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 14px;
+            animation: twinkle 2s ease-in-out infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.1; transform: scale(0.8); }
+            100% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* ===== 计数器 ===== */
+        #counter {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            text-align: center;
             pointer-events: none;
             user-select: none;
         }
-        #debug .dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 6px;
-            vertical-align: middle;
+        #count-number {
+            font-size: 100px;
+            font-weight: 900;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #FFD700, #FF6B6B, #A29BFE, #4ECDC4);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+            line-height: 1;
+            filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.3));
         }
-        #debug .dot.red { background: #ff4757; }
-        #debug .dot.green { background: #2ed573; animation: pulse 0.6s infinite; }
-        #debug .dot.yellow { background: #ffa502; animation: pulse 0.8s infinite; }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(0.8); }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        #count-label {
+            display: block;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: Arial, sans-serif;
+            letter-spacing: 4px;
+            margin-top: 8px;
+            font-weight: 300;
         }
 
-        /* ===== 底部提示 ===== */
+        /* ===== 提示文字 ===== */
         #hint {
             position: fixed;
             bottom: 60px;
             left: 0;
             right: 0;
             text-align: center;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 20px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 16px;
             pointer-events: none;
             user-select: none;
             z-index: 10;
-            line-height: 1.8;
-            transition: opacity 0.3s;
+            letter-spacing: 2px;
+            transition: opacity 0.5s;
         }
         #hint small {
             display: block;
-            font-size: 14px;
+            font-size: 12px;
             opacity: 0.5;
+            margin-top: 4px;
         }
 
-        #count {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            color: rgba(255, 255, 255, 0.2);
-            font-size: 14px;
-            font-family: monospace;
-            z-index: 10;
-            pointer-events: none;
-            user-select: none;
-        }
-
+        /* ===== ⭐ 真正的星星！ ===== */
         .star {
             position: fixed;
-            border-radius: 50%;
             pointer-events: none;
+            z-index: 1;
+            font-size: 30px;
+            line-height: 1;
+            text-align: center;
             will-change: transform, opacity;
+            filter: drop-shadow(0 0 10px currentColor);
+            transition: none;
+        }
+        /* 星星发光动画 */
+        .star.glow {
+            animation: starGlow 1s ease-in-out infinite alternate;
+        }
+        @keyframes starGlow {
+            0% { filter: drop-shadow(0 0 5px currentColor) scale(0.9); }
+            100% { filter: drop-shadow(0 0 25px currentColor) scale(1.1); }
         }
 
-        /* ===== 大按钮（点击激活用） ===== */
+        /* ===== 闪白效果 ===== */
+        #flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        #flash.active {
+            opacity: 1;
+            transition: opacity 0s;
+        }
+
+        /* ===== 激活按钮 ===== */
         #activateBtn {
             position: fixed;
             top: 0;
@@ -108,7 +153,6 @@
             outline: none;
             cursor: pointer;
             touch-action: none;
-            /* 透明的全屏按钮，点哪都行 */
         }
         #activateBtn.active {
             display: none;
@@ -117,82 +161,101 @@
 </head>
 <body>
 
-    <!-- 全屏透明按钮：点一下就激活 + 出星星 -->
-    <button id="activateBtn" aria-label="点击激活摇一摇"></button>
+    <button id="activateBtn" aria-label="点击激活"></button>
 
-    <!-- 调试面板 -->
-    <div id="debug">
-        <span class="dot red" id="dot"></span>
-        <span id="status">等待激活</span>
-        <br>
-        <span id="subStatus" style="font-size:11px;opacity:0.6;">点击屏幕启动</span>
+    <div id="bg-stars"></div>
+    <div id="flash"></div>
+
+    <div id="counter">
+        <span id="count-number">0</span>
+        <span id="count-label">✦ 颗星星</span>
     </div>
 
-    <div id="count">⭐ 0</div>
     <div id="hint">
         📱 摇一摇手机
-        <small>👆 点击任意位置激活</small>
+        <small>👆 点击屏幕激活</small>
     </div>
 
     <script>
         // ============================================================
         //  配置
         // ============================================================
-        const COLORS = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FF9F43', '#A29BFE', '#FD79A8', '#00CEC9', '#FDCB6E'];
+        const STAR_SYMBOLS = ['★', '✦', '✧', '⭐'];
+        const COLORS = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FF9F43', '#A29BFE', '#FD79A8', '#00CEC9', '#FDCB6E', '#FF4757', '#2ED573', '#7BED9F', '#70A1FF'];
 
         // ============================================================
         //  DOM
         // ============================================================
-        const dot = document.getElementById('dot');
-        const statusEl = document.getElementById('status');
-        const subStatus = document.getElementById('subStatus');
+        const countNumber = document.getElementById('count-number');
         const hintEl = document.getElementById('hint');
-        const countEl = document.getElementById('count');
+        const flashEl = document.getElementById('flash');
         const activateBtn = document.getElementById('activateBtn');
+        const bgContainer = document.getElementById('bg-stars');
+
+        // ============================================================
+        //  生成背景装饰星星
+        // ============================================================
+        function generateBgStars() {
+            for (let i = 0; i < 50; i++) {
+                const el = document.createElement('div');
+                el.className = 'bg-star';
+                el.textContent = '★';
+                el.style.left = Math.random() * 100 + '%';
+                el.style.top = Math.random() * 100 + '%';
+                el.style.fontSize = (8 + Math.random() * 16) + 'px';
+                el.style.animationDelay = (Math.random() * 3) + 's';
+                el.style.color = `rgba(255,255,255,${0.1 + Math.random() * 0.2})`;
+                bgContainer.appendChild(el);
+            }
+        }
+        generateBgStars();
 
         // ============================================================
         //  星星系统
         // ============================================================
         let stars = [];
         let starId = 0;
+        let totalStars = 0;
 
         function spawnStars(count) {
-            if (stars.length > 250) {
-                const remove = stars.splice(0, 60);
+            if (stars.length > 600) {
+                const remove = stars.splice(0, 100);
                 remove.forEach(s => s.el.remove());
             }
 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'star';
+
+                const symbol = STAR_SYMBOLS[Math.floor(Math.random() * STAR_SYMBOLS.length)];
                 const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-                el.style.background = color;
-                el.style.boxShadow = `0 0 20px ${color}`;
+                el.textContent = symbol;
+                el.style.color = color;
 
                 const w = window.innerWidth,
                     h = window.innerHeight;
-                const size = 5 + Math.random() * 16;
-                el.style.width = size + 'px';
-                el.style.height = size + 'px';
+                const size = 18 + Math.random() * 32;
+                el.style.fontSize = size + 'px';
 
+                // 从边缘进入
                 const side = Math.floor(Math.random() * 4);
                 let x, y;
                 switch (side) {
                     case 0:
-                        x = -30;
+                        x = -60;
                         y = Math.random() * h;
                         break;
                     case 1:
-                        x = w + 30;
+                        x = w + 60;
                         y = Math.random() * h;
                         break;
                     case 2:
                         x = Math.random() * w;
-                        y = -30;
+                        y = -60;
                         break;
                     case 3:
                         x = Math.random() * w;
-                        y = h + 30;
+                        y = h + 60;
                         break;
                 }
 
@@ -202,6 +265,11 @@
                 el.style.left = x + 'px';
                 el.style.top = y + 'px';
                 document.body.appendChild(el);
+
+                // 随机发光动画
+                if (Math.random() > 0.5) {
+                    el.classList.add('glow');
+                }
 
                 stars.push({
                     id: starId++,
@@ -213,18 +281,21 @@
                     vx: (tx - x) / (20 + Math.random() * 35),
                     vy: (ty - y) / (20 + Math.random() * 35),
                     life: 1,
-                    decay: 0.003 + Math.random() * 0.009,
+                    decay: 0.0015 + Math.random() * 0.005,
                     size: size,
                     color: color,
+                    symbol: symbol,
+                    rotation: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 3,
                     trail: [],
-                    maxTrail: 18,
+                    maxTrail: 12,
                 });
             }
             updateCount();
         }
 
         function updateCount() {
-            countEl.textContent = `⭐ ${stars.length}`;
+            countNumber.textContent = totalStars;
         }
 
         function animateStars() {
@@ -241,37 +312,43 @@
 
                 const dx = s.targetX - s.x;
                 const dy = s.targetY - s.y;
-                s.vx += dx * 0.025;
-                s.vy += dy * 0.025;
-                s.vx += (Math.random() - 0.5) * 0.1;
-                s.vy += (Math.random() - 0.5) * 0.1;
+                s.vx += dx * 0.02;
+                s.vy += dy * 0.02;
+                s.vx += (Math.random() - 0.5) * 0.05;
+                s.vy += (Math.random() - 0.5) * 0.05;
 
                 s.life -= s.decay;
+                s.rotation += s.rotSpeed;
 
-                if (s.life <= 0 || s.x < -300 || s.x > w + 300 || s.y < -300 || s.y > h + 300) {
+                if (s.life <= 0 || s.x < -400 || s.x > w + 400 || s.y < -400 || s.y > h + 400) {
                     toRemove.push(i);
                     continue;
                 }
 
+                // 拖尾（用星星残影）
                 s.trail.push({ x: s.x, y: s.y });
                 if (s.trail.length > s.maxTrail) s.trail.shift();
 
                 const life = Math.max(0, s.life);
                 const sz = s.size * (0.5 + 0.5 * life);
+
+                // 主星星
                 s.el.style.left = s.x + 'px';
                 s.el.style.top = s.y + 'px';
-                s.el.style.width = sz + 'px';
-                s.el.style.height = sz + 'px';
+                s.el.style.fontSize = sz + 'px';
                 s.el.style.opacity = life;
+                s.el.style.transform = `rotate(${s.rotation}deg) scale(${0.6 + 0.4 * life})`;
+                s.el.style.filter = `drop-shadow(0 0 ${10 + 20 * life}px ${s.color})`;
 
-                let shadow = '';
+                // 拖尾残影（用文字阴影）
+                let textShadow = '';
                 for (let t = 0; t < s.trail.length; t++) {
                     const p = s.trail[t];
-                    const alpha = (t / s.trail.length) * 0.4 * life;
-                    const ts = sz * (t / s.trail.length) * 0.5;
-                    shadow += `${p.x - s.x}px ${p.y - s.y}px ${ts}px ${s.color}${Math.floor(alpha * 80).toString(16).padStart(2, '0')}, `;
+                    const alpha = (t / s.trail.length) * 0.3 * life;
+                    const ts = sz * (t / s.trail.length) * 0.4;
+                    textShadow += `${p.x - s.x}px ${p.y - s.y}px ${ts}px ${s.color}${Math.floor(alpha * 80).toString(16).padStart(2, '0')}, `;
                 }
-                s.el.style.boxShadow = shadow.slice(0, -2) || 'none';
+                s.el.style.textShadow = textShadow.slice(0, -2) || 'none';
             }
 
             toRemove.sort((a, b) => b - a);
@@ -285,11 +362,10 @@
         }
 
         // ============================================================
-        //  iPhone 专用：摇一摇 + 权限请求
+        //  摇一摇
         // ============================================================
         let shakeListenerActive = false;
         let lastShakeTime = 0;
-        let shakeCount = 0;
         let lastGamma = 0,
             lastBeta = 0;
         let firstReading = true;
@@ -309,25 +385,26 @@
 
             const delta = Math.abs(gamma - lastGamma) + Math.abs(beta - lastBeta);
 
-            if (delta > 18) { // 灵敏度
+            if (delta > 15) {
                 const now = Date.now();
-                if (now - lastShakeTime > 200) {
+                if (now - lastShakeTime > 150) {
                     lastShakeTime = now;
-                    shakeCount++;
-                    statusEl.textContent = `🎯 摇 #${shakeCount}`;
-                    subStatus.textContent = `delta: ${Math.round(delta)}°`;
 
-                    spawnStars(25 + Math.floor(Math.random() * 25));
+                    const count = 25 + Math.floor(Math.random() * 30);
+                    spawnStars(count);
+                    totalStars += count;
+                    updateCount();
 
-                    if (navigator.vibrate) navigator.vibrate(20);
+                    flashEl.classList.add('active');
+                    setTimeout(() => flashEl.classList.remove('active'), 150);
 
-                    // 闪烁反馈
-                    dot.className = 'dot green';
-                    hintEl.style.opacity = '0.2';
+                    if (navigator.vibrate) navigator.vibrate(15);
+
+                    hintEl.style.opacity = '0.1';
                     clearTimeout(window._hintReset);
                     window._hintReset = setTimeout(() => {
-                        hintEl.style.opacity = '1';
-                    }, 1500);
+                        hintEl.style.opacity = '0.4';
+                    }, 500);
                 }
             }
 
@@ -335,112 +412,65 @@
             lastBeta = beta;
         }
 
-        // ---- iPhone 权限请求（关键） ----
+        // ---- iOS 权限 ----
         function requestPermissionAndStart() {
-            // 防止重复激活
-            if (shakeListenerActive) return true;
+            if (shakeListenerActive) return;
 
-            // 检查是否支持 DeviceOrientation
             if (!window.DeviceOrientationEvent) {
-                statusEl.textContent = '❌ 不支持';
-                subStatus.textContent = '设备无方向传感器';
-                return false;
+                return;
             }
 
-            // ---- iOS 需要 requestPermission ----
             if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                statusEl.textContent = '⏳ 请求权限...';
-                subStatus.textContent = '请允许 motion 权限';
-                dot.className = 'dot yellow';
-
-                // ★★★ 关键：必须立即同步调用，不能 setTimeout ★★★
                 DeviceOrientationEvent.requestPermission()
                     .then(state => {
                         if (state === 'granted') {
-                            // 授权成功，注册监听
                             window.addEventListener('deviceorientation', handleOrientation);
                             shakeListenerActive = true;
                             firstReading = true;
-                            dot.className = 'dot green';
-                            statusEl.textContent = '✅ 已激活！摇吧';
-                            subStatus.textContent = '灵敏度 18°';
-                            hintEl.textContent = '📱 摇一摇 ✨ 星星雨';
+                            hintEl.textContent = '📱 摇一摇 ⭐ 星星雨';
                             activateBtn.classList.add('active');
-                            console.log('✅ iOS 摇一摇已授权并启动');
-                            return true;
-                        } else {
-                            dot.className = 'dot red';
-                            statusEl.textContent = '❌ 权限被拒';
-                            subStatus.textContent = '设置 → 隐私 → 运动';
-                            return false;
                         }
                     })
-                    .catch(err => {
-                        dot.className = 'dot red';
-                        statusEl.textContent = '⚠️ 请求出错';
-                        subStatus.textContent = err.message || '未知错误';
-                        console.error('权限请求错误:', err);
-                        return false;
-                    });
-                return false; // 异步等待结果
+                    .catch(() => {});
             } else {
-                // ---- Android 或非 iOS ----
                 window.addEventListener('deviceorientation', handleOrientation);
                 shakeListenerActive = true;
                 firstReading = true;
-                dot.className = 'dot green';
-                statusEl.textContent = '✅ 已启动';
-                subStatus.textContent = '摇一摇试试';
-                hintEl.textContent = '📱 摇一摇 ✨';
+                hintEl.textContent = '📱 摇一摇 ⭐ 星星雨';
                 activateBtn.classList.add('active');
-                console.log('✅ 摇一摇已启动（非iOS）');
-                return true;
             }
         }
 
-        // ============================================================
-        //  点击激活（全屏按钮 + 点击任意处）
-        // ============================================================
-        function handleActivate(e) {
-            // 出星星（点击反馈）
-            spawnStars(15 + Math.floor(Math.random() * 15));
+        // ---- 点击激活 ----
+        function handleActivate() {
+            spawnStars(8 + Math.floor(Math.random() * 10));
+            totalStars += 8 + Math.floor(Math.random() * 10);
+            updateCount();
 
-            // 如果还没激活，尝试激活摇一摇
             if (!shakeListenerActive) {
                 requestPermissionAndStart();
             }
-
-            // 更新提示
-            if (shakeListenerActive) {
-                hintEl.textContent = '📱 摇一摇 ✨ 星星雨';
-            }
         }
 
-        // 全屏按钮
         activateBtn.addEventListener('click', handleActivate);
         activateBtn.addEventListener('touchstart', handleActivate, { passive: true });
 
-        // 备用：点击文档任意处
         document.addEventListener('click', handleActivate);
         document.addEventListener('touchstart', handleActivate, { passive: true });
 
         // ============================================================
-        //  启动动画 + 开场
+        //  启动
         // ============================================================
         animateStars();
-        setTimeout(() => spawnStars(20), 300);
-        setInterval(updateCount, 500);
 
-        // 3秒后如果还没激活，提示用户
+        // 开场来一波
         setTimeout(() => {
-            if (!shakeListenerActive) {
-                subStatus.textContent = '👆 点击屏幕激活';
-                statusEl.textContent = '等待激活...';
-            }
-        }, 2000);
+            spawnStars(20);
+            totalStars += 20;
+            updateCount();
+        }, 300);
 
-        console.log('✨ iPhone 专用星星雨已启动');
-        console.log('📌 点击屏幕 → 请求权限 → 摇一摇');
+        console.log('⭐ 真·星星雨已启动！摇一摇~');
     </script>
 </body>
 </html>
