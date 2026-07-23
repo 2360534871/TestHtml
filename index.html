@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ 摇一摇星星雨</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0b0e2a;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ===== 左上角调试面板 ===== */
+        #debug {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 14px;
+            border-radius: 10px;
+            backdrop-filter: blur(6px);
+            line-height: 1.7;
+            max-width: 220px;
+            pointer-events: none;
+            user-select: none;
+        }
+        #debug .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        #debug .dot.red { background: #ff4757; }
+        #debug .dot.green { background: #2ed573; animation: pulse 0.6s infinite; }
+        #debug .dot.yellow { background: #ffa502; animation: pulse 0.8s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+
+        /* ===== 底部提示 ===== */
+        #hint {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 20px;
+            pointer-events: none;
+            user-select: none;
+            z-index: 10;
+            line-height: 1.8;
+            transition: opacity 0.3s;
+        }
+        #hint small {
+            display: block;
+            font-size: 14px;
+            opacity: 0.5;
+        }
+
+        #count {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            font-family: monospace;
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .star {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        /* ===== 大按钮（点击激活用） ===== */
+        #activateBtn {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 50;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            touch-action: none;
+            /* 透明的全屏按钮，点哪都行 */
+        }
+        #activateBtn.active {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 全屏透明按钮：点一下就激活 + 出星星 -->
+    <button id="activateBtn" aria-label="点击激活摇一摇"></button>
+
+    <!-- 调试面板 -->
+    <div id="debug">
+        <span class="dot red" id="dot"></span>
+        <span id="status">等待激活</span>
+        <br>
+        <span id="subStatus" style="font-size:11px;opacity:0.6;">点击屏幕启动</span>
+    </div>
+
+    <div id="count">⭐ 0</div>
+    <div id="hint">
+        📱 摇一摇手机
+        <small>👆 点击任意位置激活</small>
+    </div>
+
+    <script>
+        // ============================================================
+        //  配置
+        // ============================================================
+        const COLORS = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FF9F43', '#A29BFE', '#FD79A8', '#00CEC9', '#FDCB6E'];
+
+        // ============================================================
+        //  DOM
+        // ============================================================
+        const dot = document.getElementById('dot');
+        const statusEl = document.getElementById('status');
+        const subStatus = document.getElementById('subStatus');
+        const hintEl = document.getElementById('hint');
+        const countEl = document.getElementById('count');
+        const activateBtn = document.getElementById('activateBtn');
+
+        // ============================================================
+        //  星星系统
+        // ============================================================
+        let stars = [];
+        let starId = 0;
+
+        function spawnStars(count) {
+            if (stars.length > 250) {
+                const remove = stars.splice(0, 60);
+                remove.forEach(s => s.el.remove());
+            }
+
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'star';
+                const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                el.style.background = color;
+                el.style.boxShadow = `0 0 20px ${color}`;
+
+                const w = window.innerWidth,
+                    h = window.innerHeight;
+                const size = 5 + Math.random() * 16;
+                el.style.width = size + 'px';
+                el.style.height = size + 'px';
+
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                switch (side) {
+                    case 0:
+                        x = -30;
+                        y = Math.random() * h;
+                        break;
+                    case 1:
+                        x = w + 30;
+                        y = Math.random() * h;
+                        break;
+                    case 2:
+                        x = Math.random() * w;
+                        y = -30;
+                        break;
+                    case 3:
+                        x = Math.random() * w;
+                        y = h + 30;
+                        break;
+                }
+
+                const tx = Math.random() * w * 0.7 + w * 0.15;
+                const ty = Math.random() * h * 0.7 + h * 0.15;
+
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                document.body.appendChild(el);
+
+                stars.push({
+                    id: starId++,
+                    el: el,
+                    x: x,
+                    y: y,
+                    targetX: tx,
+                    targetY: ty,
+                    vx: (tx - x) / (20 + Math.random() * 35),
+                    vy: (ty - y) / (20 + Math.random() * 35),
+                    life: 1,
+                    decay: 0.003 + Math.random() * 0.009,
+                    size: size,
+                    color: color,
+                    trail: [],
+                    maxTrail: 18,
+                });
+            }
+            updateCount();
+        }
+
+        function updateCount() {
+            countEl.textContent = `⭐ ${stars.length}`;
+        }
+
+        function animateStars() {
+            const toRemove = [];
+            const w = window.innerWidth,
+                h = window.innerHeight;
+
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                if (!s || !s.el) { toRemove.push(i); continue; }
+
+                s.x += s.vx;
+                s.y += s.vy;
+
+                const dx = s.targetX - s.x;
+                const dy = s.targetY - s.y;
+                s.vx += dx * 0.025;
+                s.vy += dy * 0.025;
+                s.vx += (Math.random() - 0.5) * 0.1;
+                s.vy += (Math.random() - 0.5) * 0.1;
+
+                s.life -= s.decay;
+
+                if (s.life <= 0 || s.x < -300 || s.x > w + 300 || s.y < -300 || s.y > h + 300) {
+                    toRemove.push(i);
+                    continue;
+                }
+
+                s.trail.push({ x: s.x, y: s.y });
+                if (s.trail.length > s.maxTrail) s.trail.shift();
+
+                const life = Math.max(0, s.life);
+                const sz = s.size * (0.5 + 0.5 * life);
+                s.el.style.left = s.x + 'px';
+                s.el.style.top = s.y + 'px';
+                s.el.style.width = sz + 'px';
+                s.el.style.height = sz + 'px';
+                s.el.style.opacity = life;
+
+                let shadow = '';
+                for (let t = 0; t < s.trail.length; t++) {
+                    const p = s.trail[t];
+                    const alpha = (t / s.trail.length) * 0.4 * life;
+                    const ts = sz * (t / s.trail.length) * 0.5;
+                    shadow += `${p.x - s.x}px ${p.y - s.y}px ${ts}px ${s.color}${Math.floor(alpha * 80).toString(16).padStart(2, '0')}, `;
+                }
+                s.el.style.boxShadow = shadow.slice(0, -2) || 'none';
+            }
+
+            toRemove.sort((a, b) => b - a);
+            for (const idx of toRemove) {
+                const s = stars[idx];
+                if (s && s.el && s.el.parentNode) s.el.remove();
+                stars.splice(idx, 1);
+            }
+
+            requestAnimationFrame(animateStars);
+        }
+
+        // ============================================================
+        //  iPhone 专用：摇一摇 + 权限请求
+        // ============================================================
+        let shakeListenerActive = false;
+        let lastShakeTime = 0;
+        let shakeCount = 0;
+        let lastGamma = 0,
+            lastBeta = 0;
+        let firstReading = true;
+
+        function handleOrientation(event) {
+            if (!shakeListenerActive) return;
+
+            const gamma = event.gamma || 0;
+            const beta = event.beta || 0;
+
+            if (firstReading) {
+                lastGamma = gamma;
+                lastBeta = beta;
+                firstReading = false;
+                return;
+            }
+
+            const delta = Math.abs(gamma - lastGamma) + Math.abs(beta - lastBeta);
+
+            if (delta > 18) { // 灵敏度
+                const now = Date.now();
+                if (now - lastShakeTime > 200) {
+                    lastShakeTime = now;
+                    shakeCount++;
+                    statusEl.textContent = `🎯 摇 #${shakeCount}`;
+                    subStatus.textContent = `delta: ${Math.round(delta)}°`;
+
+                    spawnStars(25 + Math.floor(Math.random() * 25));
+
+                    if (navigator.vibrate) navigator.vibrate(20);
+
+                    // 闪烁反馈
+                    dot.className = 'dot green';
+                    hintEl.style.opacity = '0.2';
+                    clearTimeout(window._hintReset);
+                    window._hintReset = setTimeout(() => {
+                        hintEl.style.opacity = '1';
+                    }, 1500);
+                }
+            }
+
+            lastGamma = gamma;
+            lastBeta = beta;
+        }
+
+        // ---- iPhone 权限请求（关键） ----
+        function requestPermissionAndStart() {
+            // 防止重复激活
+            if (shakeListenerActive) return true;
+
+            // 检查是否支持 DeviceOrientation
+            if (!window.DeviceOrientationEvent) {
+                statusEl.textContent = '❌ 不支持';
+                subStatus.textContent = '设备无方向传感器';
+                return false;
+            }
+
+            // ---- iOS 需要 requestPermission ----
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                statusEl.textContent = '⏳ 请求权限...';
+                subStatus.textContent = '请允许 motion 权限';
+                dot.className = 'dot yellow';
+
+                // ★★★ 关键：必须立即同步调用，不能 setTimeout ★★★
+                DeviceOrientationEvent.requestPermission()
+                    .then(state => {
+                        if (state === 'granted') {
+                            // 授权成功，注册监听
+                            window.addEventListener('deviceorientation', handleOrientation);
+                            shakeListenerActive = true;
+                            firstReading = true;
+                            dot.className = 'dot green';
+                            statusEl.textContent = '✅ 已激活！摇吧';
+                            subStatus.textContent = '灵敏度 18°';
+                            hintEl.textContent = '📱 摇一摇 ✨ 星星雨';
+                            activateBtn.classList.add('active');
+                            console.log('✅ iOS 摇一摇已授权并启动');
+                            return true;
+                        } else {
+                            dot.className = 'dot red';
+                            statusEl.textContent = '❌ 权限被拒';
+                            subStatus.textContent = '设置 → 隐私 → 运动';
+                            return false;
+                        }
+                    })
+                    .catch(err => {
+                        dot.className = 'dot red';
+                        statusEl.textContent = '⚠️ 请求出错';
+                        subStatus.textContent = err.message || '未知错误';
+                        console.error('权限请求错误:', err);
+                        return false;
+                    });
+                return false; // 异步等待结果
+            } else {
+                // ---- Android 或非 iOS ----
+                window.addEventListener('deviceorientation', handleOrientation);
+                shakeListenerActive = true;
+                firstReading = true;
+                dot.className = 'dot green';
+                statusEl.textContent = '✅ 已启动';
+                subStatus.textContent = '摇一摇试试';
+                hintEl.textContent = '📱 摇一摇 ✨';
+                activateBtn.classList.add('active');
+                console.log('✅ 摇一摇已启动（非iOS）');
+                return true;
+            }
+        }
+
+        // ============================================================
+        //  点击激活（全屏按钮 + 点击任意处）
+        // ============================================================
+        function handleActivate(e) {
+            // 出星星（点击反馈）
+            spawnStars(15 + Math.floor(Math.random() * 15));
+
+            // 如果还没激活，尝试激活摇一摇
+            if (!shakeListenerActive) {
+                requestPermissionAndStart();
+            }
+
+            // 更新提示
+            if (shakeListenerActive) {
+                hintEl.textContent = '📱 摇一摇 ✨ 星星雨';
+            }
+        }
+
+        // 全屏按钮
+        activateBtn.addEventListener('click', handleActivate);
+        activateBtn.addEventListener('touchstart', handleActivate, { passive: true });
+
+        // 备用：点击文档任意处
+        document.addEventListener('click', handleActivate);
+        document.addEventListener('touchstart', handleActivate, { passive: true });
+
+        // ============================================================
+        //  启动动画 + 开场
+        // ============================================================
+        animateStars();
+        setTimeout(() => spawnStars(20), 300);
+        setInterval(updateCount, 500);
+
+        // 3秒后如果还没激活，提示用户
+        setTimeout(() => {
+            if (!shakeListenerActive) {
+                subStatus.textContent = '👆 点击屏幕激活';
+                statusEl.textContent = '等待激活...';
+            }
+        }, 2000);
+
+        console.log('✨ iPhone 专用星星雨已启动');
+        console.log('📌 点击屏幕 → 请求权限 → 摇一摇');
+    </script>
+</body>
+</html>
